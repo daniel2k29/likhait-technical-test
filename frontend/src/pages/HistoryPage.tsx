@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getExpenses, createExpense } from "../services/api";
+import { getExpenses, createExpense, fetchCategories  } from "../services/api";
 import { Expense, ExpenseFormData } from "../types";
 import YearNavigation from "../components/YearNavigation";
 import { MonthNavigation } from "../components/MonthNavigation";
@@ -8,11 +8,14 @@ import { CalendarExpenseTable } from "../components/CalendarExpenseTable";
 import { ExpenseForm } from "../components/ExpenseForm";
 import { Modal, Button } from "../vibes";
 import { COLORS } from "../constants/colors";
+import { CategoryModal } from "../components/NewCategory";
 
 const HistoryPage: React.FC = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [categoriesDropdown, setCategoriesDropdown] = useState<Array<{ id: number; name: string }> >([]);
 
   // Get year and month from URL params, default to current date if not provided
   const getInitialYearMonth = () => {
@@ -48,6 +51,10 @@ const HistoryPage: React.FC = () => {
   useEffect(() => {
     fetchExpenses();
   }, [selectedYear, selectedMonth]);
+
+  useEffect(() => {
+  loadCategories();
+}, []);
 
   const fetchExpenses = async () => {
     try {
@@ -102,6 +109,15 @@ const HistoryPage: React.FC = () => {
   const total = categories.reduce((sum, cat) => sum + cat.amount, 0);
   const totalCount = categories.reduce((sum, cat) => sum + cat.count, 0);
 
+  const loadCategories = async () => {
+    try {
+      const data = await fetchCategories();
+      setCategoriesDropdown(data);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  };
+
   const pageStyle: React.CSSProperties = {
     padding: "48px 64px",
     minHeight: "100vh",
@@ -148,9 +164,15 @@ const HistoryPage: React.FC = () => {
             onYearChange={handleYearChange}
           />
         </div>
-        <Button variant="primary" onClick={() => setIsModalOpen(true)}>
-          Add Expense
-        </Button>
+          <Button 
+            variant="primary"
+            onClick={async () => {
+            await loadCategories();
+            setIsModalOpen(true);
+            }}
+          >
+            Add Expense
+          </Button>
       </div>
 
       <MonthNavigation
@@ -187,8 +209,18 @@ const HistoryPage: React.FC = () => {
         <ExpenseForm
           onSubmit={handleAddExpense}
           onCancel={() => setIsModalOpen(false)}
+          categoryOptions={categoriesDropdown}
+          setCategoryModalOpen={setIsCategoryModalOpen}
         />
       </Modal>
+      
+      <CategoryModal
+        isCategoryModalOpen={isCategoryModalOpen}
+        setIsCategoryModalOpen={setIsCategoryModalOpen}
+        onCategoryCreated={(newCategory) => {
+        setCategoriesDropdown((prev) => [...prev, newCategory]);
+        }}
+      />
     </div>
   );
 };
