@@ -1,6 +1,6 @@
 class Api::ExpensesController < ApplicationController
   def index
-    expenses = Expense.includes(:category).order(created_at: :desc)
+    expenses = Expense.includes(:category)
 
     if params[:year].present? && params[:month].present?
       year = params[:year].to_i
@@ -9,8 +9,13 @@ class Api::ExpensesController < ApplicationController
       start_date = Date.new(year, month, 1)
       end_date = start_date.end_of_month
 
-      expenses = expenses.where(created_at: start_date.beginning_of_day..end_date.end_of_day)
+      # Filter by expense date (business logic) instead of created_at (system timestamp)
+      # to ensure monthly views reflect when the expense actually occurred
+      expenses = expenses.where(date: start_date..end_date)
     end
+
+    # Order by expense date (descending) so newest expenses appear first
+    expenses = expenses.order(date: :desc, created_at: :desc)
 
     render json: expenses.map { |expense| format_expense(expense) }
   end
