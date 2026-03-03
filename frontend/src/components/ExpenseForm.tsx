@@ -4,7 +4,6 @@
 
 import React from "react";
 import { ExpenseFormData } from "../types";
-import { EXPENSE_CATEGORIES } from "../constants/categories";
 import { TextField, SelectBox, Button } from "../vibes";
 import { useExpenseForm } from "../hooks/useExpenseForm";
 
@@ -13,6 +12,8 @@ interface ExpenseFormProps {
   onSubmit: (data: ExpenseFormData) => Promise<void>;
   onCancel?: () => void;
   submitLabel?: string;
+  categoryOptions: Array<{ id: number; name: string }>;
+  setCategoryModalOpen?: (open: boolean) => void;
 }
 
 export function ExpenseForm({
@@ -20,6 +21,8 @@ export function ExpenseForm({
   onSubmit,
   onCancel,
   submitLabel = "Add Expense",
+  categoryOptions,
+  setCategoryModalOpen,
 }: ExpenseFormProps) {
   const { formData, errors, isSubmitting, handleChange, handleSubmit } =
     useExpenseForm({
@@ -39,9 +42,9 @@ export function ExpenseForm({
     marginTop: "0.5rem",
   };
 
-  const categoryOptions = EXPENSE_CATEGORIES.map((category) => ({
-    value: category,
-    label: category,
+  const selectOptions = categoryOptions.map((category) => ({
+    value: category.id.toString(),
+    label: category.name,
   }));
 
   return (
@@ -71,13 +74,23 @@ export function ExpenseForm({
 
       <SelectBox
         label="Category"
-        options={categoryOptions}
-        value={formData.category}
-        onChange={(e) => handleChange("category", e.target.value)}
-        error={errors.category}
+        options={selectOptions}
+        value={formData.category_id}
+        onChange={(e) => handleChange("category_id", e.target.value)}
+        error={errors.category_id}
         fullWidth
         required
       />
+
+      {setCategoryModalOpen && (
+        <Button
+          type="button"
+          variant="primary"
+          onClick={() => setCategoryModalOpen(true)}
+        >
+          + Add Category
+        </Button>
+  )}
 
       <TextField
         label="Date"
